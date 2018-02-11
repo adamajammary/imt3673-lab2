@@ -1,0 +1,55 @@
+<resources>
+    <string name="app_name">IMT3678 - Lab 2 - RSS</string>
+
+    <string name="menu_settings">Settings</string>
+
+    <string name="prefs_url_title">URL</string>
+    <string name="prefs_url_summary">Link to a RSS2- or Atom-based feed</string>
+
+    <string name="prefs_urls_title">Example URLs</string>
+    <string name="prefs_urls_summary">Example links to some RSS feeds</string>
+
+    <string-array name="prefs_urls_array">
+        <item name="prefs_urls_array_1">BBC News Technology</item>
+        <item name="prefs_urls_array_2">ScienceDaily Technology</item>
+        <item name="prefs_urls_array_3">TechCrunch</item>
+        <item name="prefs_urls_array_4">MIT Technology Review</item>
+        <item name="prefs_urls_array_5">Slashdot</item>
+    </string-array>
+
+    <string-array name="prefs_urls_array_values">
+        <item name="prefs_urls_array_value_1">http://feeds.bbci.co.uk/news/technology/rss.xml</item>
+        <item name="prefs_urls_array_value_2">https://www.sciencedaily.com/rss/top/technology.xml</item>
+        <item name="prefs_urls_array_value_3">http://feeds.feedburner.com/TechCrunch</item>
+        <item name="prefs_urls_array_value_4">https://www.technologyreview.com/topnews.rss</item>
+        <item name="prefs_urls_array_value_5">http://rss.slashdot.org/Slashdot/slashdot</item>
+        <!-- Atom feeds for testing -->
+        <!--<item name="prefs_urls_array_value_4">https://nedlasting.geonorge.no/geonorge/Tjenestefeed.xml</item>-->
+        <!--<item name="prefs_urls_array_value_5">http://fletcherpenney.net/atom.xml</item>-->
+    </string-array>
+
+    <string name="prefs_limit_title">Limit result</string>
+    <string name="prefs_limit_summary">Limit the number of items that should be displayed</string>
+
+    <string-array name="prefs_limit_array">
+        <item name="prefs_limit_array_1">10</item>
+        <item name="prefs_limit_array_2">20</item>
+        <item name="prefs_limit_array_3">50</item>
+        <item name="prefs_limit_array_4">100</item>
+    </string-array>
+
+    <string name="prefs_frequency_title">Fetch frequency</string>
+    <string name="prefs_frequency_summary">The frequency at which the app fetches content</string>
+
+    <string-array name="prefs_frequency_array">
+        <item name="prefs_frequency_array_1">Every 15 min</item>
+        <item name="prefs_frequency_array_2">Every hour</item>
+        <item name="prefs_frequency_array_3">Once a day</item>
+    </string-array>
+
+    <string-array name="prefs_frequency_array_values">
+        <item name="prefs_frequency_array_value_1">15</item>
+        <item name="prefs_frequency_array_value_2">60</item>
+        <item name="prefs_frequency_array_value_3">1440</item>
+    </string-array>
+</resources>

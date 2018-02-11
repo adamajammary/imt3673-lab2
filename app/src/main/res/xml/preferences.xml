@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <EditTextPreference
+        android:key="preferences_url"
+        android:title="@string/prefs_url_title"
+        android:summary="@string/prefs_url_summary"
+    />
+
+    <ListPreference
+        android:key="preferences_urls"
+        android:title="@string/prefs_urls_title"
+        android:dialogTitle="@string/prefs_urls_title"
+        android:summary="@string/prefs_urls_summary"
+        android:entries="@array/prefs_urls_array"
+        android:entryValues="@array/prefs_urls_array_values"
+        android:defaultValue="http://feeds.bbci.co.uk/news/technology/rss.xml"
+    />
+
+    <ListPreference
+        android:key="preferences_limit"
+        android:title="@string/prefs_limit_title"
+        android:dialogTitle="@string/prefs_limit_title"
+        android:summary="@string/prefs_limit_summary"
+        android:entries="@array/prefs_limit_array"
+        android:entryValues="@array/prefs_limit_array"
+        android:defaultValue="10"
+    />
+
+    <ListPreference
+        android:key="prefs_frequency"
+        android:title="@string/prefs_frequency_title"
+        android:dialogTitle="@string/prefs_frequency_title"
+        android:summary="@string/prefs_frequency_summary"
+        android:entries="@array/prefs_frequency_array"
+        android:entryValues="@array/prefs_frequency_array_values"
+        android:defaultValue="15"
+    />
+</PreferenceScreen>
