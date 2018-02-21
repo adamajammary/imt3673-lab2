@@ -1,10 +1,16 @@
 package com.ntnu.imt3673.lab2;
 
+import android.app.job.JobInfo;
+import android.app.job.JobScheduler;
+import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
-import android.os.Handler;
+import android.os.PersistableBundle;
 import android.preference.PreferenceManager;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -14,35 +20,37 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.ProgressBar;
-
-import java.util.ArrayList;
-import java.util.Timer;
-import java.util.TimerTask;
+import android.widget.Toast;
 
 /**
  * Main activity - displays a list of items from the RSS feed.
  */
 public class MainActivity extends AppCompatActivity {
 
-    public ItemAdapter         adapter;
-    public ArrayList<ItemData> itemsList = new ArrayList<>();
-    public int                 freq;
-    public int                 limit;
-    public String              url;
-    public String              result;
-    public ProgressBar         progressBar;
-    public boolean             isVisible = false;
+    private ItemAdapter     adapter;
+    private JobInfo.Builder builder;
+    private ProgressBar     progressBar;
+    private MainReceiver    receiver;
 
     @Override
     public void onResume() {
         super.onResume();
-        this.isVisible = true;
+
+        this.receiver  = new MainReceiver();
+
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(Constants.DOWNLOAD_COMPLETED);
+        intentFilter.addAction(Constants.DOWNLOAD_PROGRESS);
+        intentFilter.addAction(Constants.DOWNLOAD_TOAST);
+
+        LocalBroadcastManager.getInstance(this).registerReceiver(this.receiver, intentFilter);
     }
 
     @Override
     public void onPause() {
         super.onPause();
-        this.isVisible = false;
+
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(this.receiver);
     }
 
     @Override
@@ -51,6 +59,9 @@ public class MainActivity extends AppCompatActivity {
         return true;
     }
 
+    /**
+     * Displays the Settings (preferences) menu
+     */
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == R.id.menu_settings) {
@@ -63,26 +74,20 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
+    /**
+     * Applies user preferences when returning from the Settings menu.
+     */
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if ((requestCode == Constants.SETTINGS_RET) && (resultCode == RESULT_OK)) {
-            String freq  = data.getStringExtra(Constants.PREFS_FREQ);
-            String limit = data.getStringExtra(Constants.PREFS_LIMIT);
-            String url   = data.getStringExtra(Constants.PREFS_URL);
+            String frequency = data.getStringExtra(Constants.PREFS_FREQ);
+            String limit     = data.getStringExtra(Constants.PREFS_LIMIT);
+            String url       = data.getStringExtra(Constants.PREFS_URL);
 
             if (TextUtils.isEmpty(url))
                 url = data.getStringExtra(Constants.PREFS_URLS);
 
-            if (!TextUtils.isEmpty(url))
-                this.url = url;
-
-            if (!TextUtils.isEmpty(freq))
-                this.freq = Integer.parseInt(freq);
-
-            if (!TextUtils.isEmpty(limit))
-                this.limit = Integer.parseInt(limit);
-
-            this.scheduleDownload();
+            this.scheduleDownload(url, Integer.parseInt(limit), Integer.parseInt(frequency));
         }
     }
 
@@ -104,45 +109,82 @@ public class MainActivity extends AppCompatActivity {
             this.progressBar = findViewById(R.id.progress_bar);
 
             // Set a custom adapter to handle the layout of each item in the list view
-            this.adapter = new ItemAdapter(this, R.layout.layout_item, R.id.tv_itemTitle, this.itemsList);
+            this.adapter = new ItemAdapter(this, R.layout.layout_item);
+
             itemsView.setAdapter(this.adapter);
 
             // View the content details in another activity when a user clicks on an item
-            itemsView.setOnItemClickListener((AdapterView<?> parent, View view, int position, long id) -> {
-                ItemData itemData = itemsList.get(position);
-                Intent   intent   = new Intent(this, ItemContentActivity.class);
+            itemsView.setOnItemClickListener(
+                (AdapterView<?> parent, View view, int position, long id) -> {
+                    ItemData itemData = adapter.getItem(position);
+                    Intent   intent   = new Intent(this, ItemContentActivity.class);
 
-                intent.putExtra(Constants.ITEM_CONTENT, itemData.content);
-                startActivity(intent);
-            });
+                    intent.putExtra(Constants.ITEM_CONTENT, itemData.content);
+                    startActivity(intent);
+                }
+            );
 
             // Get the user selected preferences
-            this.freq  = Integer.parseInt(preferences.getString(Constants.PREFS_FREQ, ""));
-            this.limit = Integer.parseInt(preferences.getString(Constants.PREFS_LIMIT, ""));
-            this.url   = preferences.getString(Constants.PREFS_URL,  "");
+            int    frequency = Integer.parseInt(preferences.getString(Constants.PREFS_FREQ, ""));
+            int    limit     = Integer.parseInt(preferences.getString(Constants.PREFS_LIMIT, ""));
+            String url       = preferences.getString(Constants.PREFS_URL,  "");
 
             // If the user didn't enter an URL, use the selected example URL
-            if (TextUtils.isEmpty(this.url))
-                this.url = preferences.getString(Constants.PREFS_URLS, "");
+            if (TextUtils.isEmpty(url))
+                url = preferences.getString(Constants.PREFS_URLS, "");
 
-            this.scheduleDownload();
+            this.scheduleDownload(url, limit, frequency);
         } catch (NullPointerException | NumberFormatException e) {
             e.printStackTrace();
         }
     }
 
-    private void scheduleDownload() {
-        Context context = this;
-        Handler handler = new Handler();
+    /**
+     * Schedules a periodic download job based on user preferences using JobScheduler.
+     * https://developer.android.com/training/run-background-service/index.html
+     * https://developer.android.com/topic/performance/scheduling.html
+     * https://developer.android.com/reference/android/app/job/JobScheduler.html
+     */
+    private void scheduleDownload(String url, int limit, int frequency) {
+        if (this.builder == null) {
+            this.builder = new JobInfo.Builder(
+                Constants.DOWNLOAD_JOB_ID, new ComponentName(this, ScheduledDownloadService.class)
+            );
+        }
 
-        TimerTask downloadTask = new TimerTask() {
-            public void run() {
-                handler.post(() -> { new DownloadRSSAsyncTask(context).execute(); });
+        PersistableBundle bundle = new PersistableBundle();
+
+        bundle.putInt(Constants.DOWNLOAD_LIMIT,  limit);
+        bundle.putString(Constants.DOWNLOAD_URL, url);
+
+        this.builder.setExtras(bundle);
+        this.builder.setPeriodic(frequency * Constants.MINUTES_IN_HOUR * Constants.MS_IN_SECOND);
+
+        getSystemService(JobScheduler.class).schedule(this.builder.build());
+    }
+
+    /**
+     * Receives a message from the download service when a download is complete.
+     * Refreshes the ListView with downloaded data.
+     */
+    private class MainReceiver extends BroadcastReceiver {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (intent.getAction() == Constants.DOWNLOAD_PROGRESS) {
+                int progress = intent.getIntExtra(Constants.DOWNLOAD_PROGRESS_VAL, 0);
+                progressBar.setVisibility(View.VISIBLE);
+                progressBar.setProgress(progress);
+            } else if (intent.getAction() == Constants.DOWNLOAD_TOAST) {
+                String message = intent.getStringExtra(Constants.DOWNLOAD_TOAST_MSG);
+                Toast.makeText(getApplicationContext(), message, Toast.LENGTH_SHORT).show();
+            } else if (intent.getAction() == Constants.DOWNLOAD_COMPLETED) {
+                progressBar.setVisibility(View.GONE);
+                adapter.addAll(intent.getParcelableArrayListExtra(Constants.DOWNLOAD_RESULT));
+                adapter.notifyDataSetChanged();
             }
-        };
+        }
 
-        Timer timer = new Timer();
-        timer.schedule(downloadTask, 0, this.freq * 60 * 1000);
     }
 
 }

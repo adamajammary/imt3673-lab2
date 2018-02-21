@@ -38,6 +38,7 @@
         <item name="prefs_limit_array_4">100</item>
     </string-array>
 
+    <!-- Minimum allowed periodic interval for JobScheduler is 15 minutes -->
     <string name="prefs_frequency_title">Fetch frequency</string>
     <string name="prefs_frequency_summary">The frequency at which the app fetches content</string>
 
