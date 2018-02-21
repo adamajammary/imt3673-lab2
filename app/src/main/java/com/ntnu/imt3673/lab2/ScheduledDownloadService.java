@@ -148,6 +148,8 @@ public class ScheduledDownloadService extends JobService {
 
                 if ((responseCode >= 200) && (responseCode < 400))
                     inputStream  = connection.getInputStream();
+                else
+                    ((HttpURLConnection)connection).getErrorStream().close();
             } catch (IOException | NullPointerException e) {
                 e.printStackTrace();
                 inputStream = null;
