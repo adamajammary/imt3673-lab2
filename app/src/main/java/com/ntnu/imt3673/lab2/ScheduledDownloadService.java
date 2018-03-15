@@ -173,9 +173,10 @@ public class ScheduledDownloadService extends JobService {
                 XmlPullParser xmlParser = xmlFactory.newPullParser();
                 xmlParser.setInput(inputStream, null);
 
-                SimpleDateFormat dateFormatRSS   = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z", Locale.ENGLISH);
+                /*SimpleDateFormat dateFormatRSS   = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z", Locale.ENGLISH);
+                SimpleDateFormat dateFormatRSS2  = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm Z",    Locale.ENGLISH);
                 SimpleDateFormat dateFormatAtom  = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ",      Locale.ENGLISH);
-                SimpleDateFormat dateFormatAtom2 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss",       Locale.ENGLISH);
+                SimpleDateFormat dateFormatAtom2 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss",       Locale.ENGLISH);*/
                 ItemData         itemData        = null;
                 boolean          itemIsReady     = false;
                 int              xmlEvent        = xmlParser.getEventType();
@@ -214,12 +215,17 @@ public class ScheduledDownloadService extends JobService {
                                         itemData.imageBitmap = Bitmap.createScaledBitmap(itemData.imageBitmap, 128, 128, false);
                                     }
                                 } else if (xmlTagName.equals("pubDate") && (xmlTagPrefix == null)) {
-                                    itemData.date = dateFormatRSS.format(dateFormatRSS.parse(xmlText));
+                                    /*if (xmlText.matches(".*\\d{2}:\\d{2}:\\d{2}.*"))
+                                        itemData.date = dateFormatRSS.format(dateFormatRSS.parse(xmlText));
+                                    else
+                                        itemData.date = dateFormatRSS2.format(dateFormatRSS2.parse(xmlText));*/
+                                    itemData.date = xmlText;
                                 } else if (xmlTagName.equals("updated") && (xmlTagPrefix == null)) {
-                                    if (xmlText.length() > 19)
+                                    /*if (xmlText.length() > 19)
                                         itemData.date = dateFormatAtom.format(dateFormatAtom.parse(xmlText));
                                     else
-                                        itemData.date = dateFormatAtom2.format(dateFormatAtom2.parse(xmlText));
+                                        itemData.date = dateFormatAtom2.format(dateFormatAtom2.parse(xmlText));*/
+                                    itemData.date = xmlText;
                                 } else if ((xmlTagName.equals("description") || xmlTagName.equals("summary") || xmlTagName.equals("content")) && (xmlTagPrefix == null)) {
                                     itemData.content = xmlText;
                                 } else if ((xmlTagName.equals("item") || xmlTagName.equals("entry")) && (xmlTagPrefix == null)) {
@@ -239,7 +245,7 @@ public class ScheduledDownloadService extends JobService {
 
                     xmlEvent = xmlParser.next();
                 }
-            } catch (IOException | XmlPullParserException | ParseException | NullPointerException e) {
+            } catch (IOException | XmlPullParserException | NullPointerException e) {
                 e.printStackTrace();
             }
 
