@@ -202,7 +202,7 @@ public class ScheduledDownloadService extends JobService {
                             if (itemIsReady) {
                                 if (xmlTagName.equals("title") && (xmlTagPrefix == null)) {
                                     itemData.title = xmlText;
-                                } else if (xmlTagName.equals("thumbnail") && xmlTagPrefix.equals("media")) {
+                                } else if ((xmlTagName.equals("thumbnail") && xmlTagPrefix.equals("media")) || xmlTagName.equals("enclosure")) {
                                     for (int i = 0; i < xmlParser.getAttributeCount(); i++) {
                                         if (xmlParser.getAttributeName(i).equals("url")) {
                                             itemData.imageURL = xmlParser.getAttributeValue(i);
@@ -212,7 +212,18 @@ public class ScheduledDownloadService extends JobService {
 
                                     if (!TextUtils.isEmpty(itemData.imageURL)) {
                                         itemData.imageBitmap = BitmapFactory.decodeStream(new URL(itemData.imageURL).openStream());
-                                        itemData.imageBitmap = Bitmap.createScaledBitmap(itemData.imageBitmap, 128, 128, false);
+
+                                        if (itemData.imageBitmap != null)
+                                            itemData.imageBitmap = Bitmap.createScaledBitmap(itemData.imageBitmap, 128, 128, false);
+                                    }
+                                } else if (xmlTagName.equals("imgRegular") && (xmlTagPrefix == null)) {
+                                    itemData.imageURL = xmlText;
+
+                                    if (!TextUtils.isEmpty(itemData.imageURL)) {
+                                        itemData.imageBitmap = BitmapFactory.decodeStream(new URL(itemData.imageURL).openStream());
+
+                                        if (itemData.imageBitmap != null)
+                                            itemData.imageBitmap = Bitmap.createScaledBitmap(itemData.imageBitmap, 128, 128, false);
                                     }
                                 } else if (xmlTagName.equals("pubDate") && (xmlTagPrefix == null)) {
                                     /*if (xmlText.matches(".*\\d{2}:\\d{2}:\\d{2}.*"))
